@@ -1,78 +1,52 @@
 import { useState } from "react";
 import API from "../services/api";
-import { useNavigate } from "react-router-dom";
-import { Modal, Button, Container, Row, Col, Navbar, Nav, Card } from "react-bootstrap";
+import { useNavigate, Link } from "react-router-dom";
+import { Modal, Button, Container, Row, Col, Card } from "react-bootstrap";
 
 function Register() {
-  const [user, setUser] = useState({
-    name: "",
-    email: "",
-    password: "",
-    role: "CUSTOMER",
-  });
+  const [user, setUser] = useState({ name: "", email: "", password: "", role: "CUSTOMER" });
   const [show, setShow] = useState(false);
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  const handleChange = (e) => setUser({ ...user, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!user.name || !user.email || !user.password) {
-      setMessage("All fields required");
-      setShow(true);
-      return;
-    }
+    if (!user.name.trim()) return setMessage("Please enter your full name") & setShow(true);
+    if (!user.email.trim()) return setMessage("Please enter your email") & setShow(true);
+    if (!user.password || user.password.length < 6) return setMessage("Password must be at least 6 characters") & setShow(true);
+    setLoading(true);
     try {
-      const res = await API.post("/users/register", user);
-      setMessage(res.data);
+      await API.post("/users/register", user);
+      setMessage("Registration successful!");
       setShow(true);
-      setTimeout(() => navigate("/login"), 1500);
+      setTimeout(() => { setShow(false); navigate("/login"); }, 2000);
     } catch (err) {
-      setMessage("Error while registering");
+      setMessage(err.response?.data || "Registration failed");
       setShow(true);
+    } finally {
+      setLoading(false);
     }
   };
 
+  const handleScroll = (sectionId) => document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' });
+
   return (
     <>
-      {/* Navigation Bar - Sticky */}
-      <Navbar 
-        expand="lg" 
-        className="py-3" 
-        style={{ 
-          backgroundColor: '#2C1810', 
-          position: 'sticky',
-          top: 0,
-          zIndex: 1000,
-          width: '100%'
-        }}
-      >
-        <Container>
-          <Navbar.Brand href="/" className="text-white fw-bold fs-3">CafeBrew</Navbar.Brand>
-          <Navbar.Toggle aria-controls="basic-navbar-nav" className="bg-white" />
-          <Navbar.Collapse id="basic-navbar-nav">
-            <Nav className="ms-auto gap-3">
-              <Nav.Link href="#home" className="text-white">Home</Nav.Link>
-              <Nav.Link href="#menu" className="text-white">Menu</Nav.Link>
-              <Nav.Link href="#about" className="text-white">About</Nav.Link>
-              <Nav.Link href="#contact" className="text-white">Contact</Nav.Link>
-              <Nav.Link href="/login" className="btn btn-outline-light px-3 py-1 ms-2">Sign In</Nav.Link>
-            </Nav>
-          </Navbar.Collapse>
-        </Container>
-      </Navbar>
-
-      {/* Hero Section with Background Image */}
+      {/* Hero Section */}
       <div id="home" className="min-vh-100 d-flex align-items-center" style={{
         backgroundImage: 'url("https://images.unsplash.com/photo-1442512595331-e89e73853f31?ixlib=rb-4.0.3")',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        position: 'relative',
+        backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed', position: 'relative'
       }}>
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.55)' }} />
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)' }} />
         <Container className="position-relative text-white text-center">
           <h1 className="display-2 fw-bold mb-3">Welcome to CafeBrew</h1>
           <p className="lead fs-3 mb-5">Where every cup tells a story</p>
-          <a href="#register" className="btn btn-lg px-5 py-3" style={{ backgroundColor: '#C49A6C', color: 'white', fontWeight: 'bold' }}>Join Our Community</a>
+          <button onClick={() => handleScroll('register')} className="btn btn-lg px-5 py-3 rounded-pill" style={{ backgroundColor: '#C49A6C', color: 'white', fontWeight: 'bold' }}>
+            Join Our Community
+          </button>
         </Container>
       </div>
 
@@ -85,30 +59,27 @@ function Register() {
             </Col>
             <Col lg={6}>
               <h2 className="fw-bold mb-3" style={{ color: '#2C1810' }}>Our Story</h2>
-              <p className="lead mb-4" style={{ color: '#4A3B32' }}>Founded in 2020, CafeBrew is a sanctuary for coffee lovers. We source our beans directly from ethical farms and roast them in-house to bring you the perfect cup.</p>
-              <p style={{ color: '#6B5A4E' }}>Our cozy space is designed for connection, creativity, and relaxation. Whether you need a morning boost or an afternoon retreat, we invite you to make our cafe your second home.</p>
-              <div className="mt-4 d-flex gap-4">
-                <div><strong style={{ color: '#2C1810' }}>Artisan Coffee</strong><br />Freshly roasted</div>
-                <div><strong style={{ color: '#2C1810' }}>Fresh Pastries</strong><br />Baked daily</div>
-                <div><strong style={{ color: '#2C1810' }}>Cozy Ambiance</strong><br />With free WiFi</div>
+              <p className="lead mb-4">Founded in 2020, CafeBrew is a sanctuary for coffee lovers...</p>
+              <div className="mt-4 d-flex gap-4 flex-wrap">
+                <div><strong>☕ Artisan Coffee</strong><br />Freshly roasted</div>
+                <div><strong>🥐 Fresh Pastries</strong><br />Baked daily</div>
+                <div><strong>💻 Cozy Ambiance</strong><br />With free WiFi</div>
               </div>
             </Col>
           </Row>
         </Container>
       </section>
 
-      {/* Menu Preview Section */}
+      {/* Menu Preview */}
       <section id="menu" className="py-5 bg-white">
         <Container>
           <h2 className="text-center fw-bold mb-5" style={{ color: '#2C1810' }}>Our Signature Brews</h2>
           <Row>
-            {[
-              { name: "Caramel Macchiato", desc: "Espresso, vanilla, caramel, steamed milk", price: "$4.50", img: "https://images.unsplash.com/photo-1485808191679-5f86510681a2" },
+            {[{ name: "Caramel Macchiato", desc: "Espresso, vanilla, caramel, steamed milk", price: "$4.50", img: "https://images.unsplash.com/photo-1485808191679-5f86510681a2" },
               { name: "Hazelnut Latte", desc: "Smooth espresso with hazelnut and creamy milk", price: "$4.25", img: "https://images.unsplash.com/photo-1461023058943-07fcbe16d735" },
-              { name: "Iced Americano", desc: "Rich espresso poured over chilled water", price: "$3.75", img: "https://images.unsplash.com/photo-1517701604599-bb29b565090c" }
-            ].map((item, idx) => (
+              { name: "Iced Americano", desc: "Rich espresso poured over chilled water", price: "$3.75", img: "https://images.unsplash.com/photo-1517701604599-bb29b565090c" }].map((item, idx) => (
               <Col md={4} key={idx} className="mb-4">
-                <Card className="h-100 border-0 shadow-sm text-center">
+                <Card className="h-100 border-0 shadow-sm text-center overflow-hidden">
                   <Card.Img variant="top" src={item.img} style={{ height: '220px', objectFit: 'cover' }} />
                   <Card.Body>
                     <Card.Title className="fw-bold" style={{ color: '#2C1810' }}>{item.name}</Card.Title>
@@ -119,13 +90,10 @@ function Register() {
               </Col>
             ))}
           </Row>
-          <div className="text-center mt-4">
-            <a href="#!" className="btn px-4 py-2" style={{ backgroundColor: '#2C1810', color: 'white' }}>View Full Menu</a>
-          </div>
         </Container>
       </section>
 
-      {/* Registration Form Section */}
+      {/* Registration Form */}
       <section id="register" className="py-5" style={{ backgroundColor: '#F8F5F0' }}>
         <Container>
           <Row className="justify-content-center">
@@ -137,32 +105,29 @@ function Register() {
                 </div>
                 <form onSubmit={handleSubmit}>
                   <div className="mb-3">
-                    <label className="form-label fw-semibold" style={{ color: '#2C1810' }}>Full Name</label>
-                    <input type="text" className="form-control" placeholder="Enter your full name" onChange={(e) => setUser({ ...user, name: e.target.value })} />
+                    <label className="form-label fw-semibold">Full Name *</label>
+                    <input type="text" name="name" className="form-control" value={user.name} onChange={handleChange} required />
                   </div>
                   <div className="mb-3">
-                    <label className="form-label fw-semibold" style={{ color: '#2C1810' }}>Email Address</label>
-                    <input type="email" className="form-control" placeholder="Enter your email" onChange={(e) => setUser({ ...user, email: e.target.value })} />
+                    <label className="form-label fw-semibold">Email Address *</label>
+                    <input type="email" name="email" className="form-control" value={user.email} onChange={handleChange} required />
                   </div>
                   <div className="mb-3">
-                    <label className="form-label fw-semibold" style={{ color: '#2C1810' }}>Password</label>
-                    <input type="password" className="form-control" placeholder="Create a password" onChange={(e) => setUser({ ...user, password: e.target.value })} />
+                    <label className="form-label fw-semibold">Password *</label>
+                    <input type="password" name="password" className="form-control" value={user.password} onChange={handleChange} required minLength="6" />
                   </div>
                   <div className="mb-4">
-                    <label className="form-label fw-semibold" style={{ color: '#2C1810' }}>Register as</label>
-                    <select className="form-select" onChange={(e) => setUser({ ...user, role: e.target.value })}>
-                      <option value="CUSTOMER">Coffee Lover (Customer)</option>
-                      <option value="ADMIN">Cafe Manager (Admin)</option>
+                    <label className="form-label fw-semibold">Register as</label>
+                    <select name="role" className="form-select" value={user.role} onChange={handleChange}>
+                      <option value="CUSTOMER">☕ Coffee Lover (Customer)</option>
+                      <option value="ADMIN">👑 Cafe Manager (Admin)</option>
                     </select>
                   </div>
-                  <button type="submit" className="btn w-100 py-2 fw-bold mb-3" style={{ backgroundColor: '#C49A6C', color: 'white', border: 'none' }}>Join CafeBrew Now</button>
+                  <button type="submit" className="btn w-100 py-2 fw-bold mb-3 rounded-pill" style={{ backgroundColor: '#C49A6C', color: 'white' }} disabled={loading}>
+                    {loading ? "Registering..." : "Join CafeBrew Now"}
+                  </button>
                   <div className="text-center">
-                    <p className="text-muted">Already a coffee lover? <a href="/login" className="fw-bold" style={{ color: '#C49A6C' }}>Login here</a></p>
-                  </div>
-                  <hr className="my-4" />
-                  <div className="text-center">
-                    <p className="text-muted small mb-0">Join now and get a free coffee on your first visit</p>
-                    <p className="text-muted small mt-2">By registering, you agree to our Terms of Service and Privacy Policy</p>
+                    <p className="text-muted">Already a coffee lover? <Link to="/login" className="fw-bold" style={{ color: '#C49A6C' }}>Login here</Link></p>
                   </div>
                 </form>
               </div>
@@ -171,45 +136,10 @@ function Register() {
         </Container>
       </section>
 
-      {/* Footer */}
-      <footer id="contact" className="py-5" style={{ backgroundColor: '#2C1810', color: '#F8F5F0' }}>
-        <Container>
-          <Row>
-            <Col md={4} className="mb-4 mb-md-0">
-              <h3 className="fw-bold">CafeBrew</h3>
-              <p>Where every cup tells a story</p>
-            </Col>
-            <Col md={4} className="mb-4 mb-md-0">
-              <h5>Visit Us</h5>
-              <p>123 Coffee Street<br />Brewtown, BT 12345</p>
-              <p>Open daily: 8am - 10pm</p>
-            </Col>
-            <Col md={4}>
-              <h5>Contact</h5>
-              <p>hello@cafebrew.com<br />(555) 123-4567</p>
-            </Col>
-          </Row>
-          <hr className="mt-4" style={{ backgroundColor: '#C49A6C' }} />
-          <div className="text-center pt-3 small">
-            &copy; 2025 CafeBrew. All rights reserved.
-          </div>
-        </Container>
-      </footer>
-
-      {/* Modal */}
       <Modal show={show} onHide={() => setShow(false)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title style={{ color: '#2C1810' }}>Registration Status</Modal.Title>
-        </Modal.Header>
-        <Modal.Body className="text-center py-4">
-          <h5 className={message === "Error while registering" ? "text-danger" : "text-success"}>{message}</h5>
-          {message !== "Error while registering" && message !== "All fields required" && (
-            <p className="text-muted mt-3 small">Your first coffee is waiting for you</p>
-          )}
-        </Modal.Body>
-        <Modal.Footer>
-          <Button onClick={() => setShow(false)} style={{ backgroundColor: '#C49A6C', border: 'none' }}>Close</Button>
-        </Modal.Footer>
+        <Modal.Header closeButton><Modal.Title>{message.includes("successful") ? "🎉 Success!" : "Info"}</Modal.Title></Modal.Header>
+        <Modal.Body className="text-center"><h5 className={message.includes("successful") ? "text-success" : "text-danger"}>{message}</h5></Modal.Body>
+        <Modal.Footer><Button onClick={() => setShow(false)} style={{ backgroundColor: '#C49A6C', border: 'none' }}>OK</Button></Modal.Footer>
       </Modal>
     </>
   );
